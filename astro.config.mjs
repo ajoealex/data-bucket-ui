@@ -11,5 +11,12 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()]
-  }
+  },
+  build: {
+    assetsPrefix: '.',
+    inlineStylesheets: 'always'
+  },
+  outDir: './docs',
+  base: './',
+  trailingSlash: 'always',
 });
