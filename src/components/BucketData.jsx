@@ -264,10 +264,31 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
                 {requests[selectedRequest].headers && Object.keys(requests[selectedRequest].headers).length > 0 && (
                   <section>
                     <h3 className="text-base font-semibold text-gray-900 mb-4">Headers</h3>
-                    <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                      <pre className="text-sm text-gray-300 font-mono leading-relaxed">
-                        {JSON.stringify(requests[selectedRequest].headers, null, 2)}
-                      </pre>
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                              Header
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                              Value
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {Object.entries(requests[selectedRequest].headers).map(([key, value]) => (
+                            <tr key={key} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm font-mono text-gray-900 break-all">
+                                {key}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-mono text-gray-700 break-all">
+                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </section>
                 )}

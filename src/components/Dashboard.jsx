@@ -53,7 +53,7 @@ export default function Dashboard({ connection, onDisconnect }) {
     return () => clearInterval(interval);
   }, []);
 
-  const createBucket = async (name, mockResponse, mockHeaders, mockStatusCode) => {
+  const createBucket = async (name, mockResponse, mockHeaders, mockStatusCode, mockResponseType) => {
     try {
       const result = await apiCall('/api/v1/create_bucket', {
         method: 'POST',
@@ -61,7 +61,8 @@ export default function Dashboard({ connection, onDisconnect }) {
           name,
           mock_response: mockResponse || {},
           mock_headers: mockHeaders || {},
-          mock_status_code: mockStatusCode || 200
+          mock_status_code: mockStatusCode || 200,
+          mock_response_type: mockResponseType || 'json'
         })
       });
 
@@ -71,7 +72,8 @@ export default function Dashboard({ connection, onDisconnect }) {
           name,
           mock_response: mockResponse || {},
           mock_headers: mockHeaders || {},
-          mock_status_code: mockStatusCode || 200
+          mock_status_code: mockStatusCode || 200,
+          mock_response_type: mockResponseType || 'json'
         }
       }));
 
@@ -314,6 +316,7 @@ export default function Dashboard({ connection, onDisconnect }) {
           title="Create New Bucket"
           onClose={() => setShowCreateModal(false)}
           onSubmit={createBucket}
+          existingBuckets={buckets}
         />
       )}
 
@@ -325,32 +328,86 @@ export default function Dashboard({ connection, onDisconnect }) {
             setShowEditModal(false);
             setEditingBucket(null);
           }}
-          onSubmit={(name, mockResponse, mockHeaders, mockStatusCode) => {
+          onSubmit={(name, mockResponse, mockHeaders, mockStatusCode, mockResponseType) => {
             updateBucket(editingBucket.id, {
               name,
               mock_response: mockResponse,
               mock_headers: mockHeaders,
-              mock_status_code: mockStatusCode
+              mock_status_code: mockStatusCode,
+              mock_response_type: mockResponseType
             });
           }}
+          existingBuckets={buckets}
         />
       )}
     </div>
   );
 }
 
-function BucketModal({ title, initialData, onClose, onSubmit }) {
+function BucketModal({ title, initialData, onClose, onSubmit, existingBuckets }) {
   const [name, setName] = useState(initialData?.name || '');
-  const [mockResponse, setMockResponse] = useState(
-    initialData?.mock_response ? JSON.stringify(initialData.mock_response, null, 2) : '{"message": "Success"}'
-  );
+  const [mockResponseType, setMockResponseType] = useState(initialData?.mock_response_type || 'json');
+  const [mockResponse, setMockResponse] = useState(() => {
+    if (!initialData?.mock_response) {
+      return '{"message": "Success"}';
+    }
+    // If response type is json and mock_response is an object, stringify it
+    if ((initialData.mock_response_type === 'json' || !initialData.mock_response_type) && typeof initialData.mock_response === 'object') {
+      return JSON.stringify(initialData.mock_response, null, 2);
+    }
+    // Otherwise, it's already a string (xml or text)
+    return initialData.mock_response;
+  });
   const [mockStatusCode, setMockStatusCode] = useState((initialData?.mock_status_code || 200).toString());
+  const [nameError, setNameError] = useState('');
+
+  // Update mock response when response type changes (only if creating new bucket)
+  const handleResponseTypeChange = (newType) => {
+    setMockResponseType(newType);
+
+    // Only update content if this is a new bucket (no initialData) or if user hasn't customized the content
+    if (!initialData || mockResponse === '{"message": "Success"}' ||
+        mockResponse === '<?xml version="1.0"?>\n<response>\n  <message>Success</message>\n</response>' ||
+        mockResponse === 'Success message') {
+      if (newType === 'json') {
+        setMockResponse('{"message": "Success"}');
+      } else if (newType === 'xml') {
+        setMockResponse('<?xml version="1.0"?>\n<response>\n  <message>Success</message>\n</response>');
+      } else if (newType === 'text') {
+        setMockResponse('ok recieved!');
+      }
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setNameError('');
+
+    // Check for duplicate bucket name (only when creating new bucket or changing name)
+    if (existingBuckets) {
+      const isDuplicate = Object.values(existingBuckets).some(bucket => {
+        // When editing, allow the same name if it's the current bucket
+        if (initialData && bucket.name === initialData.name) {
+          return name !== initialData.name && bucket.name === name;
+        }
+        return bucket.name === name;
+      });
+
+      if (isDuplicate) {
+        setNameError('A bucket with this name already exists. Please choose a different name.');
+        return;
+      }
+    }
+
     try {
-      const parsedResponse = JSON.parse(mockResponse);
-      onSubmit(name, parsedResponse, {}, parseInt(mockStatusCode));
+      let parsedResponse;
+      if (mockResponseType === 'json') {
+        parsedResponse = JSON.parse(mockResponse);
+      } else {
+        // For xml and text, send as string
+        parsedResponse = mockResponse;
+      }
+      onSubmit(name, parsedResponse, {}, parseInt(mockStatusCode), mockResponseType);
     } catch (error) {
       alert('Invalid JSON in mock response');
     }
@@ -377,22 +434,47 @@ function BucketModal({ title, initialData, onClose, onSubmit }) {
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setNameError('');
+              }}
               placeholder="My Webhook Bucket"
               required
-              className="w-full px-3 py-3 border-2 border-gray-200 rounded-lg transition-all outline-none focus:border-purple-600 focus:ring-4 focus:ring-purple-100"
+              className={`w-full px-3 py-3 border-2 rounded-lg transition-all outline-none ${
+                nameError
+                  ? 'border-red-500 focus:border-red-600 focus:ring-4 focus:ring-red-100'
+                  : 'border-gray-200 focus:border-purple-600 focus:ring-4 focus:ring-purple-100'
+              }`}
             />
+            {nameError && (
+              <p className="mt-2 text-sm text-red-600 font-medium">{nameError}</p>
+            )}
           </div>
 
           <div className="mb-5">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Mock Response (JSON)
+              Response Type
+            </label>
+            <select
+              value={mockResponseType}
+              onChange={(e) => handleResponseTypeChange(e.target.value)}
+              className="w-full px-3 py-3 border-2 border-gray-200 rounded-lg transition-all outline-none focus:border-purple-600 focus:ring-4 focus:ring-purple-100"
+            >
+              <option value="json">JSON (application/json)</option>
+              <option value="xml">XML (application/xml)</option>
+              <option value="text">Plain Text (text/plain)</option>
+            </select>
+          </div>
+
+          <div className="mb-5">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Mock Response {mockResponseType === 'json' ? '(JSON)' : mockResponseType === 'xml' ? '(XML)' : '(Text)'}
             </label>
             <textarea
               value={mockResponse}
               onChange={(e) => setMockResponse(e.target.value)}
               rows={6}
-              placeholder='{"message": "Success"}'
+              placeholder={mockResponseType === 'json' ? '{"message": "Success"}' : mockResponseType === 'xml' ? '<?xml version="1.0"?>\n<response>\n  <message>Success</message>\n</response>' : 'Success message'}
               required
               className="w-full px-3 py-3 border-2 border-gray-200 rounded-lg font-mono resize-y transition-all outline-none focus:border-purple-600 focus:ring-4 focus:ring-purple-100"
             />
