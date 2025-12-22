@@ -253,7 +253,7 @@ export default function Dashboard({ connection, onDisconnect }) {
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Endpoint:</span>
                     <div className="flex items-center gap-2">
                       <code className="text-xs text-gray-700 bg-gray-50 px-2.5 py-1.5 rounded block break-all font-mono flex-1">
-                        {connection.url}/bucket_data/{id}/data
+                        {connection.url}/api/v1/bucket_data/{id}/data
                       </code>
                       <button
                         onClick={(e) => copyEndpoint(e, id)}
