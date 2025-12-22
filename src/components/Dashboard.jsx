@@ -136,7 +136,7 @@ export default function Dashboard({ connection, onDisconnect }) {
 
   const copyEndpoint = (e, bucketId) => {
     e.stopPropagation();
-    const fullEndpoint = `${connection.url}/bucket_data/${bucketId}/data`;
+    const fullEndpoint = `${connection.url}/api/v1/bucket_data/${bucketId}/data`;
     navigator.clipboard.writeText(fullEndpoint).then(() => {
       setCopiedId(bucketId);
       setTimeout(() => setCopiedId(null), 2000);
