@@ -66,11 +66,13 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
 
   const getMethodColor = (method) => {
     const colors = {
-      GET: 'bg-blue-600',
-      POST: 'bg-green-600',
-      PUT: 'bg-yellow-600',
+      GET: 'bg-green-600',
+      POST: 'bg-yellow-600',
+      PUT: 'bg-blue-600',
+      PATCH: 'bg-violet-600',
       DELETE: 'bg-red-600',
-      PATCH: 'bg-purple-600'
+      HEAD: 'bg-lime-600',
+      OPTIONS: 'bg-purple-600'
     };
     return colors[method] || 'bg-gray-600';
   };
@@ -273,33 +275,92 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
                 {requests[selectedRequest].query && Object.keys(requests[selectedRequest].query).length > 0 && (
                   <section>
                     <h3 className="text-base font-semibold text-gray-900 mb-4">Query Parameters</h3>
-                    <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                      <pre className="text-sm text-gray-300 font-mono leading-relaxed">
-                        {JSON.stringify(requests[selectedRequest].query, null, 2)}
-                      </pre>
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                              Key
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                              Value
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {Object.entries(requests[selectedRequest].query).map(([key, value]) => (
+                            <tr key={key} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm font-mono text-gray-900 break-all">
+                                {key}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-mono text-gray-700 break-all">
+                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </section>
                 )}
 
-                {requests[selectedRequest].payload && Object.keys(requests[selectedRequest].payload).length > 0 && (
+                {requests[selectedRequest].payload && (
                   <section>
-                    <h3 className="text-base font-semibold text-gray-900 mb-4">Payload</h3>
-                    <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                      <pre className="text-sm text-gray-300 font-mono leading-relaxed">
-                        {JSON.stringify(requests[selectedRequest].payload, null, 2)}
-                      </pre>
-                    </div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4">
+                      Payload
+                      {requests[selectedRequest].payload_type && (
+                        <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {requests[selectedRequest].payload_type}
+                        </span>
+                      )}
+                    </h3>
+                    {(() => {
+                      const payloadType = requests[selectedRequest].payload_type;
+                      const payload = requests[selectedRequest].payload;
+
+                      // Show as table for form-urlencoded and multipart-form-data
+                      if ((payloadType === 'form-urlencoded' || payloadType === 'multipart-form-data') && typeof payload === 'object' && !Array.isArray(payload)) {
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Field
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Value
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {Object.entries(payload).map(([key, value]) => (
+                                  <tr key={key} className="hover:bg-gray-50">
+                                    <td className="px-4 py-3 text-sm font-mono text-gray-900 break-all">
+                                      {key}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm font-mono text-gray-700 break-all">
+                                      {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      } else {
+                        // Show as code block for JSON, XML, text, binary
+                        return (
+                          <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                            <pre className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
+                              {typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2)}
+                            </pre>
+                          </div>
+                        );
+                      }
+                    })()}
                   </section>
                 )}
-
-                <section>
-                  <h3 className="text-base font-semibold text-gray-900 mb-4">Full Request</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                    <pre className="text-sm text-gray-300 font-mono leading-relaxed">
-                      {JSON.stringify(requests[selectedRequest], null, 2)}
-                    </pre>
-                  </div>
-                </section>
               </div>
             </div>
           )}

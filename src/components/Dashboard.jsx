@@ -9,6 +9,7 @@ export default function Dashboard({ connection, onDisconnect }) {
   const [currentView, setCurrentView] = useState('list');
   const [selectedBucketId, setSelectedBucketId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState(null);
 
   const apiCall = async (endpoint, options = {}) => {
     const headers = {
@@ -133,6 +134,18 @@ export default function Dashboard({ connection, onDisconnect }) {
     loadBuckets();
   };
 
+  const copyEndpoint = (e, bucketId) => {
+    e.stopPropagation();
+    const fullEndpoint = `${connection.url}/bucket_data/${bucketId}/data`;
+    navigator.clipboard.writeText(fullEndpoint).then(() => {
+      setCopiedId(bucketId);
+      setTimeout(() => setCopiedId(null), 2000);
+    }).catch(err => {
+      console.error('Failed to copy endpoint:', err);
+      alert('Failed to copy to clipboard');
+    });
+  };
+
   if (currentView === 'data' && selectedBucketId) {
     return (
       <BucketData
@@ -238,14 +251,48 @@ export default function Dashboard({ connection, onDisconnect }) {
                   </div>
                   <div>
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Endpoint:</span>
-                    <code className="text-xs text-gray-700 bg-gray-50 px-2.5 py-1.5 rounded block break-all font-mono">
-                      /bucket_data/{id}/data
-                    </code>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs text-gray-700 bg-gray-50 px-2.5 py-1.5 rounded block break-all font-mono flex-1">
+                        {connection.url}/bucket_data/{id}/data
+                      </code>
+                      <button
+                        onClick={(e) => copyEndpoint(e, id)}
+                        className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center transition-all ${
+                          copiedId === id
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                        }`}
+                        title={copiedId === id ? "Copied!" : "Copy full endpoint URL"}
+                      >
+                        {copiedId === id ? (
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/>
+                            <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Mock Status:</span>
-                    <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">
-                      {bucket.mock_status_code || 200}
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Created:</span>
+                    <span className="text-sm text-gray-700">
+                      {bucket.created_at ? new Date(bucket.created_at).toLocaleString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Requests:</span>
+                    <span className="text-sm text-gray-700">
+                      {bucket.request_count || 0} / {bucket.max_requests || '∞'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Last Request:</span>
+                    <span className="text-sm text-gray-700">
+                      {bucket.last_request_at ? new Date(bucket.last_request_at).toLocaleString() : 'None'}
                     </span>
                   </div>
                 </div>
