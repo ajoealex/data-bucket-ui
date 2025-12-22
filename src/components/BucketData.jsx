@@ -168,32 +168,35 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto p-2">
-              {requests.map((request, index) => (
-                <div
-                  key={index}
-                  className={`p-4 border-2 rounded-lg mb-2 cursor-pointer transition-all ${
-                    selectedRequest === index
-                      ? 'border-purple-600 bg-purple-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setSelectedRequest(index)}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`px-2.5 py-1 ${getMethodColor(request.method)} text-white rounded text-xs font-bold font-mono tracking-wide`}>
-                      {request.method}
-                    </span>
-                    <span className="text-xs text-gray-400 font-semibold">
-                      #{requests.length - index}
-                    </span>
+              {[...requests].reverse().map((request, reverseIndex) => {
+                const index = requests.length - 1 - reverseIndex;
+                return (
+                  <div
+                    key={index}
+                    className={`p-4 border-2 rounded-lg mb-2 cursor-pointer transition-all ${
+                      selectedRequest === index
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setSelectedRequest(index)}
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <span className={`px-2.5 py-1 ${getMethodColor(request.method)} text-white rounded text-xs font-bold font-mono tracking-wide`}>
+                        {request.method}
+                      </span>
+                      <span className="text-xs text-gray-400 font-semibold">
+                        #{index + 1}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600 mb-1">
+                      {new Date(request.timestamp).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-700 font-mono break-all">
+                      {request.endpoint}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600 mb-1">
-                    {new Date(request.timestamp).toLocaleString()}
-                  </div>
-                  <div className="text-xs text-gray-700 font-mono break-all">
-                    {request.endpoint}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
