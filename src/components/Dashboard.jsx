@@ -118,8 +118,19 @@ export default function Dashboard({ connection, onDisconnect }) {
       }
 
       if (isUnauthenticated) {
-        // Local storage mode
-        const bucketId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Local storage mode - still call the API to get the bucket ID from server
+        const result = await apiCall('/api/v1/create_bucket', {
+          method: 'POST',
+          body: JSON.stringify({
+            name,
+            mock_response: mockResponse || {},
+            mock_headers: mockHeaders || {},
+            mock_status_code: mockStatusCode || 200,
+            mock_response_type: mockResponseType || 'json'
+          })
+        });
+
+        const bucketId = result.bucket_id;
         const newBucket = {
           name,
           mock_response: mockResponse || {},
@@ -143,7 +154,7 @@ export default function Dashboard({ connection, onDisconnect }) {
         return;
       }
 
-      const result = await apiCall('/api/v1/create_bucket', {
+      await apiCall('/api/v1/create_bucket', {
         method: 'POST',
         body: JSON.stringify({
           name,
@@ -154,16 +165,8 @@ export default function Dashboard({ connection, onDisconnect }) {
         })
       });
 
-      setBuckets(prev => ({
-        ...prev,
-        [result.bucket_id]: {
-          name,
-          mock_response: mockResponse || {},
-          mock_headers: mockHeaders || {},
-          mock_status_code: mockStatusCode || 200,
-          mock_response_type: mockResponseType || 'json'
-        }
-      }));
+      // Reload buckets from server to get the complete bucket data
+      await loadBuckets();
 
       setShowCreateModal(false);
     } catch (error) {
