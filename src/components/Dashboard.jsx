@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import BucketData from './BucketData';
+import { config } from '../config';
 
 export default function Dashboard({ connection, onDisconnect }) {
   const [buckets, setBuckets] = useState({});
@@ -10,6 +11,7 @@ export default function Dashboard({ connection, onDisconnect }) {
   const [selectedBucketId, setSelectedBucketId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
+  const [isUnauthenticated, setIsUnauthenticated] = useState(false);
 
   const apiCall = async (endpoint, options = {}) => {
     const headers = {
@@ -34,10 +36,63 @@ export default function Dashboard({ connection, onDisconnect }) {
   const loadBuckets = async () => {
     try {
       setIsLoading(true);
-      const response = await apiCall('/api/v1/buckets');
-      setBuckets(response.buckets || {});
+      const response = await fetch(`${connection.url}/api/v1/buckets`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(connection.username && connection.password && {
+            'Authorization': 'Basic ' + btoa(`${connection.username}:${connection.password}`)
+          })
+        }
+      });
+
+      // Handle 401 Unauthorized - check if it returns {"error": "Authentication required"}
+      if (response.status === 401) {
+        try {
+          const errorData = await response.json();
+          if (errorData.error === 'Authentication required') {
+            // Server requires authentication but we don't have it - use local storage
+            console.log('Server requires authentication - using local storage mode');
+            setIsUnauthenticated(true);
+            const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
+            setBuckets(localBuckets);
+            setIsLoading(false);
+            return;
+          }
+        } catch (e) {
+          // If JSON parsing fails, still treat as unauthenticated
+          console.log('401 error - using local storage mode');
+          setIsUnauthenticated(true);
+          const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
+          setBuckets(localBuckets);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to load buckets: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Check if response indicates authentication required (200 OK but with error field)
+      if (data.error === 'Authentication required') {
+        console.log('Server requires authentication - using local storage mode');
+        setIsUnauthenticated(true);
+        const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
+        setBuckets(localBuckets);
+      } else {
+        // Authenticated mode - use server data
+        setIsUnauthenticated(false);
+        setBuckets(data.buckets || {});
+      }
     } catch (error) {
       console.error('Failed to load buckets:', error);
+      // Fallback to local storage on error
+      console.log('Error loading buckets - using local storage mode');
+      setIsUnauthenticated(true);
+      const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
+      setBuckets(localBuckets);
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +110,39 @@ export default function Dashboard({ connection, onDisconnect }) {
 
   const createBucket = async (name, mockResponse, mockHeaders, mockStatusCode, mockResponseType) => {
     try {
+      // Check bucket limit
+      const bucketCount = Object.keys(buckets).length;
+      if (bucketCount >= config.maxBucketsPerUser) {
+        alert(`You have reached the maximum limit of ${config.maxBucketsPerUser} buckets. Please delete a bucket before creating a new one.`);
+        return;
+      }
+
+      if (isUnauthenticated) {
+        // Local storage mode
+        const bucketId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const newBucket = {
+          name,
+          mock_response: mockResponse || {},
+          mock_headers: mockHeaders || {},
+          mock_status_code: mockStatusCode || 200,
+          mock_response_type: mockResponseType || 'json',
+          created_at: new Date().toISOString(),
+          request_count: 0,
+          max_requests: 100,
+          last_request_at: null
+        };
+
+        const updatedBuckets = {
+          ...buckets,
+          [bucketId]: newBucket
+        };
+
+        localStorage.setItem('localBuckets', JSON.stringify(updatedBuckets));
+        setBuckets(updatedBuckets);
+        setShowCreateModal(false);
+        return;
+      }
+
       const result = await apiCall('/api/v1/create_bucket', {
         method: 'POST',
         body: JSON.stringify({
@@ -85,6 +173,23 @@ export default function Dashboard({ connection, onDisconnect }) {
 
   const updateBucket = async (bucketId, updates) => {
     try {
+      if (isUnauthenticated) {
+        // Local storage mode
+        const updatedBuckets = {
+          ...buckets,
+          [bucketId]: {
+            ...buckets[bucketId],
+            ...updates
+          }
+        };
+
+        localStorage.setItem('localBuckets', JSON.stringify(updatedBuckets));
+        setBuckets(updatedBuckets);
+        setShowEditModal(false);
+        setEditingBucket(null);
+        return;
+      }
+
       await apiCall(`/api/v1/bucket/${bucketId}`, {
         method: 'PUT',
         body: JSON.stringify(updates)
@@ -109,6 +214,15 @@ export default function Dashboard({ connection, onDisconnect }) {
     if (!confirm('Are you sure you want to delete this bucket?')) return;
 
     try {
+      if (isUnauthenticated) {
+        // Local storage mode
+        const updatedBuckets = { ...buckets };
+        delete updatedBuckets[bucketId];
+        localStorage.setItem('localBuckets', JSON.stringify(updatedBuckets));
+        setBuckets(updatedBuckets);
+        return;
+      }
+
       await apiCall(`/api/v1/bucket/${bucketId}/clean`, { method: 'DELETE' });
       setBuckets(prev => {
         const newBuckets = { ...prev };
