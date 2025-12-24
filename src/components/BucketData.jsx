@@ -5,6 +5,7 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const apiCall = async (endpoint, options = {}) => {
     const headers = {
@@ -77,6 +78,71 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
     return colors[method] || 'bg-gray-600';
   };
 
+  // Comprehensive search filter function
+  const filterRequests = (requests, query) => {
+    if (!query || query.trim() === '') {
+      return requests;
+    }
+
+    const searchTerm = query.toLowerCase();
+
+    return requests.filter((request) => {
+      // Search in endpoint/URL
+      if (request.endpoint && request.endpoint.toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+
+      // Search in method
+      if (request.method && request.method.toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+
+      // Search in IP address
+      if (request.ip && request.ip.toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+
+      // Search in headers (both keys and values)
+      if (request.headers) {
+        for (const [key, value] of Object.entries(request.headers)) {
+          const headerKey = key.toLowerCase();
+          const headerValue = typeof value === 'object' ? JSON.stringify(value).toLowerCase() : String(value).toLowerCase();
+
+          if (headerKey.includes(searchTerm) || headerValue.includes(searchTerm)) {
+            return true;
+          }
+        }
+      }
+
+      // Search in query parameters (both keys and values)
+      if (request.query) {
+        for (const [key, value] of Object.entries(request.query)) {
+          const queryKey = key.toLowerCase();
+          const queryValue = typeof value === 'object' ? JSON.stringify(value).toLowerCase() : String(value).toLowerCase();
+
+          if (queryKey.includes(searchTerm) || queryValue.includes(searchTerm)) {
+            return true;
+          }
+        }
+      }
+
+      // Search in payload
+      if (request.payload) {
+        const payloadStr = typeof request.payload === 'object'
+          ? JSON.stringify(request.payload).toLowerCase()
+          : String(request.payload).toLowerCase();
+
+        if (payloadStr.includes(searchTerm)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  };
+
+  const filteredRequests = filterRequests(requests, searchQuery);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -139,18 +205,51 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
 
       <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-6 grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 min-h-[calc(100vh-140px)]">
         <div className="bg-white rounded-xl shadow-sm flex flex-col overflow-hidden max-h-[400px] lg:max-h-none">
-          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-base sm:text-lg font-bold text-gray-900">Requests ({requests.length})</h2>
-            <button
-              onClick={loadBucketData}
-              className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-50 rounded-md flex items-center justify-center text-gray-700 transition-all hover:bg-gray-200"
-              title="Refresh"
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="sm:w-4 sm:h-4">
-                <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                Requests ({filteredRequests.length}{filteredRequests.length !== requests.length && ` of ${requests.length}`})
+              </h2>
+              <button
+                onClick={loadBucketData}
+                className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-50 rounded-md flex items-center justify-center text-gray-700 transition-all hover:bg-gray-200"
+                title="Refresh"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="sm:w-4 sm:h-4">
+                  <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                  <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search in URL, headers, params, payload..."
+                className="w-full px-3 py-2 pl-9 text-xs sm:text-sm border-2 border-gray-200 rounded-lg transition-all outline-none focus:border-purple-600 focus:ring-4 focus:ring-purple-100 placeholder-gray-400"
+              />
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-            </button>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Clear search"
+                >
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
 
           {isLoading ? (
@@ -168,10 +267,19 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
               <p className="text-sm sm:text-base text-gray-600 mb-1">No requests captured yet</p>
               <p className="text-xs sm:text-sm text-gray-400">Send data to this bucket's endpoint</p>
             </div>
+          ) : filteredRequests.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-15 text-gray-300 text-center">
+              <svg width="48" height="48" viewBox="0 0 60 60" fill="none" className="mb-2 sm:mb-3 sm:w-15 sm:h-15">
+                <path d="M30 10 L50 30 L30 50 L10 30 Z" stroke="currentColor" strokeWidth="2" fill="none"/>
+                <circle cx="30" cy="30" r="3" fill="currentColor" opacity="0.3"/>
+              </svg>
+              <p className="text-sm sm:text-base text-gray-600 mb-1">No matching requests found</p>
+              <p className="text-xs sm:text-sm text-gray-400">Try a different search term</p>
+            </div>
           ) : (
             <div className="flex-1 overflow-y-auto p-2">
-              {[...requests].reverse().map((request, reverseIndex) => {
-                const index = requests.length - 1 - reverseIndex;
+              {[...filteredRequests].reverse().map((request) => {
+                const index = requests.indexOf(request);
                 return (
                   <div
                     key={index}
