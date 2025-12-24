@@ -8,41 +8,79 @@ export default function ConnectForm({ onConnect }) {
   const [isConnectingServer, setIsConnectingServer] = useState(false);
   const [isConnectingCommunity, setIsConnectingCommunity] = useState(false);
   const [error, setError] = useState('');
+  const [remainingAttempts, setRemainingAttempts] = useState(null);
+  const [isBlacklisted, setIsBlacklisted] = useState(false);
   const showCommunityServer = config.communityServerUrl && config.communityServerUrl.trim() !== '';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setRemainingAttempts(null);
+    setIsBlacklisted(false);
     setIsConnectingServer(true);
 
     try {
-      const response = await fetch(`${url}/api/v1/ping`, {
+      // First, check if server is reachable with ping
+      const pingResponse = await fetch(`${url}/api/v1/ping`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(username && password && {
-            'Authorization': 'Basic ' + btoa(`${username}:${password}`)
-          })
-        },
       });
 
-      if (!response.ok) {
-        throw new Error('Connection failed');
+      if (!pingResponse.ok) {
+        throw new Error('Server is not reachable. Please check the URL.');
       }
 
-      const data = await response.json();
+      const pingData = await pingResponse.json();
+      if (pingData.status !== 'ok') {
+        throw new Error('Server is not responding correctly.');
+      }
 
-      if (data.status === 'ok') {
+      // Then authenticate using /auth endpoint
+      const authHeaders = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add authorization header if credentials provided
+      if (username || password) {
+        authHeaders['Authorization'] = 'Basic ' + btoa(`${username}:${password}`);
+      }
+
+      const authResponse = await fetch(`${url}/api/v1/auth`, {
+        method: 'POST',
+        headers: authHeaders,
+      });
+
+      const authData = await authResponse.json();
+
+      if (authData.authenticated) {
+        // Authentication successful
         localStorage.setItem('dataBucketUrl', url);
         localStorage.setItem('dataBucketUsername', username);
         localStorage.setItem('dataBucketPassword', password);
         localStorage.setItem('isCommunityServer', 'false');
         onConnect({ url, username, password });
       } else {
-        throw new Error('Invalid response from server');
+        // Authentication failed
+        if (authData.blacklisted) {
+          setIsBlacklisted(true);
+          setError('You have been blacklisted due to too many failed attempts. Please try again later.');
+        } else if (authData.error) {
+          const errorMessage = authData.error;
+          if (authData.remaining_attempts !== undefined) {
+            setRemainingAttempts(authData.remaining_attempts);
+            setError(`${errorMessage} (${authData.remaining_attempts} attempts remaining)`);
+          } else {
+            setError(errorMessage);
+          }
+        } else {
+          setError('Authentication failed. Please check your credentials.');
+        }
       }
     } catch (err) {
-      setError('Failed to connect to Data Bucket API. Please check the URL and credentials.');
+      if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to connect to Data Bucket API. Please check the URL and try again.');
+      }
     } finally {
       setIsConnectingServer(false);
     }
@@ -50,33 +88,52 @@ export default function ConnectForm({ onConnect }) {
 
   const handleCommunityConnect = async () => {
     setError('');
+    setRemainingAttempts(null);
+    setIsBlacklisted(false);
     setIsConnectingCommunity(true);
 
     try {
-      const response = await fetch(`${config.communityServerUrl}/api/v1/ping`, {
+      // First, check if server is reachable with ping
+      const pingResponse = await fetch(`${config.communityServerUrl}/api/v1/ping`, {
         method: 'GET',
+      });
+
+      if (!pingResponse.ok) {
+        throw new Error('Community Server is not reachable. Please try again later.');
+      }
+
+      const pingData = await pingResponse.json();
+      if (pingData.status !== 'ok') {
+        throw new Error('Community Server is not responding correctly.');
+      }
+
+      // Then authenticate (no credentials needed for community server)
+      const authResponse = await fetch(`${config.communityServerUrl}/api/v1/auth`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
-      if (!response.ok) {
-        throw new Error('Connection failed');
-      }
+      const authData = await authResponse.json();
 
-      const data = await response.json();
-
-      if (data.status === 'ok') {
+      if (authData.authenticated) {
+        // Authentication successful
         localStorage.setItem('dataBucketUrl', config.communityServerUrl);
         localStorage.setItem('dataBucketUsername', '');
         localStorage.setItem('dataBucketPassword', '');
         localStorage.setItem('isCommunityServer', 'true');
         onConnect({ url: config.communityServerUrl, username: '', password: '' });
       } else {
-        throw new Error('Invalid response from server');
+        // Authentication failed (shouldn't happen for community server)
+        setError('Failed to authenticate with Community Server. Please try again later.');
       }
     } catch (err) {
-      setError('Failed to connect to Community Server. Please try again later.');
+      if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to connect to Community Server. Please try again later.');
+      }
     } finally {
       setIsConnectingCommunity(false);
     }
@@ -128,7 +185,7 @@ export default function ConnectForm({ onConnect }) {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username (optional)"
+                  placeholder="Enter username"
                   className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl text-base transition-all outline-none bg-gray-50 focus:border-purple-600 focus:bg-white focus:ring-4 focus:ring-purple-100 placeholder-gray-400"
                 />
               </div>
@@ -142,14 +199,33 @@ export default function ConnectForm({ onConnect }) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password (optional)"
+                  placeholder="Enter password"
                   className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl text-base transition-all outline-none bg-gray-50 focus:border-purple-600 focus:bg-white focus:ring-4 focus:ring-purple-100 placeholder-gray-400"
                 />
               </div>
 
               {error && (
-                <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm border-l-4 border-red-700">
-                  {error}
+                <div className={`p-4 rounded-lg text-sm border-l-4 ${
+                  isBlacklisted
+                    ? 'bg-red-50 text-red-800 border-red-800'
+                    : remainingAttempts !== null && remainingAttempts <= 3
+                    ? 'bg-orange-50 text-orange-800 border-orange-800'
+                    : 'bg-red-50 text-red-700 border-red-700'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                    </svg>
+                    <div className="flex-1">
+                      <p className="font-semibold">{isBlacklisted ? 'Account Blacklisted' : 'Authentication Failed'}</p>
+                      <p className="mt-1">{error}</p>
+                      {remainingAttempts !== null && remainingAttempts <= 3 && !isBlacklisted && (
+                        <p className="mt-2 text-xs font-semibold">
+                          ⚠️ Warning: Only {remainingAttempts} attempt{remainingAttempts !== 1 ? 's' : ''} remaining before your IP is blacklisted!
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
