@@ -137,16 +137,16 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
         </div>
       </header>
 
-      <div className="max-w-[1600px] mx-auto px-8 py-6 grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 min-h-[calc(100vh-140px)]">
-        <div className="bg-white rounded-xl shadow-sm flex flex-col overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-900">Requests ({requests.length})</h2>
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-6 grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 min-h-[calc(100vh-140px)]">
+        <div className="bg-white rounded-xl shadow-sm flex flex-col overflow-hidden max-h-[400px] lg:max-h-none">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">Requests ({requests.length})</h2>
             <button
               onClick={loadBucketData}
-              className="w-8 h-8 bg-gray-50 rounded-md flex items-center justify-center text-gray-700 transition-all hover:bg-gray-200"
+              className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-50 rounded-md flex items-center justify-center text-gray-700 transition-all hover:bg-gray-200"
               title="Refresh"
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="sm:w-4 sm:h-4">
                 <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
                 <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
               </svg>
@@ -154,19 +154,19 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
           </div>
 
           {isLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-15 text-gray-600">
-              <div className="w-10 h-10 border-4 border-gray-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
-              <p>Loading requests...</p>
+            <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-15 text-gray-600">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 border-4 border-gray-200 border-t-purple-600 rounded-full animate-spin mb-3 sm:mb-4"></div>
+              <p className="text-sm sm:text-base">Loading requests...</p>
             </div>
           ) : requests.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-15 text-gray-300 text-center">
-              <svg width="60" height="60" viewBox="0 0 60 60" fill="none" className="mb-3">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-15 text-gray-300 text-center">
+              <svg width="48" height="48" viewBox="0 0 60 60" fill="none" className="mb-2 sm:mb-3 sm:w-15 sm:h-15">
                 <rect x="10" y="15" width="40" height="30" rx="3" stroke="currentColor" strokeWidth="2" fill="none"/>
                 <path d="M15 25 L45 25" stroke="currentColor" strokeWidth="2"/>
                 <circle cx="30" cy="35" r="4" fill="currentColor" opacity="0.3"/>
               </svg>
-              <p className="text-gray-600 mb-1">No requests captured yet</p>
-              <p className="text-sm text-gray-400">Send data to this bucket's endpoint</p>
+              <p className="text-sm sm:text-base text-gray-600 mb-1">No requests captured yet</p>
+              <p className="text-xs sm:text-sm text-gray-400">Send data to this bucket's endpoint</p>
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto p-2">
@@ -175,25 +175,25 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
                 return (
                   <div
                     key={index}
-                    className={`p-4 border-2 rounded-lg mb-2 cursor-pointer transition-all ${
+                    className={`p-3 sm:p-4 border-2 rounded-lg mb-2 cursor-pointer transition-all ${
                       selectedRequest === index
                         ? 'border-purple-600 bg-purple-50'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                     onClick={() => setSelectedRequest(index)}
                   >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className={`px-2.5 py-1 ${getMethodColor(request.method)} text-white rounded text-xs font-bold font-mono tracking-wide`}>
+                    <div className="flex justify-between items-center mb-1.5 sm:mb-2">
+                      <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 ${getMethodColor(request.method)} text-white rounded text-[10px] sm:text-xs font-bold font-mono tracking-wide`}>
                         {request.method}
                       </span>
-                      <span className="text-xs text-gray-400 font-semibold">
+                      <span className="text-[10px] sm:text-xs text-gray-400 font-semibold">
                         #{index + 1}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-600 mb-1">
+                    <div className="text-[10px] sm:text-xs text-gray-600 mb-1">
                       {new Date(request.timestamp).toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-700 font-mono break-all">
+                    <div className="text-[10px] sm:text-xs text-gray-700 font-mono break-all">
                       {request.endpoint}
                     </div>
                   </div>
@@ -205,21 +205,21 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
 
         <div className="bg-white rounded-xl shadow-sm flex flex-col overflow-hidden">
           {selectedRequest === null ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-20 text-gray-300">
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" className="mb-6">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-20 text-gray-300">
+              <svg width="60" height="60" viewBox="0 0 80 80" fill="none" className="mb-4 sm:mb-6 sm:w-20 sm:h-20">
                 <rect x="15" y="20" width="50" height="40" rx="4" stroke="currentColor" strokeWidth="3" fill="none" opacity="0.3"/>
                 <path d="M25 35 L55 35" stroke="currentColor" strokeWidth="3" opacity="0.3"/>
                 <path d="M25 45 L50 45" stroke="currentColor" strokeWidth="3" opacity="0.3"/>
                 <path d="M25 52 L45 52" stroke="currentColor" strokeWidth="3" opacity="0.3"/>
               </svg>
-              <p className="text-gray-600">Select a request to view details</p>
+              <p className="text-sm sm:text-base text-gray-600">Select a request to view details</p>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="flex justify-between items-start mb-8 pb-5 border-b-2 border-gray-200">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="flex justify-between items-start mb-4 sm:mb-8 pb-3 sm:pb-5 border-b-2 border-gray-200">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Request Details</h2>
-                  <p className="text-sm text-gray-600">
+                  <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">Request Details</h2>
+                  <p className="text-xs sm:text-sm text-gray-600">
                     {new Date(requests[selectedRequest].timestamp).toLocaleString('en-US', {
                       weekday: 'long',
                       year: 'numeric',
@@ -231,32 +231,32 @@ export default function BucketData({ bucketId, bucketName, connection, onBack, o
                     })}
                   </p>
                 </div>
-                <span className={`px-4 py-2 ${getMethodColor(requests[selectedRequest].method)} text-white rounded-md text-sm font-bold font-mono tracking-widest`}>
+                <span className={`px-2 py-1 sm:px-4 sm:py-2 ${getMethodColor(requests[selectedRequest].method)} text-white rounded-md text-xs sm:text-sm font-bold font-mono tracking-wider sm:tracking-widest`}>
                   {requests[selectedRequest].method}
                 </span>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <section>
-                  <h3 className="text-base font-semibold text-gray-900 mb-4">General</h3>
-                  <div className="space-y-2.5">
-                    <div className="flex py-2.5 border-b border-gray-100">
-                      <span className="w-36 text-sm font-semibold text-gray-600 flex-shrink-0">Method:</span>
-                      <span className="text-sm text-gray-900 break-all">{requests[selectedRequest].method}</span>
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">General</h3>
+                  <div className="space-y-2 sm:space-y-2.5">
+                    <div className="flex flex-col sm:flex-row py-2 sm:py-2.5 border-b border-gray-100">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 sm:mb-0 sm:w-36 sm:flex-shrink-0">Method:</span>
+                      <span className="text-xs sm:text-sm text-gray-900 break-all">{requests[selectedRequest].method}</span>
                     </div>
-                    <div className="flex py-2.5 border-b border-gray-100">
-                      <span className="w-36 text-sm font-semibold text-gray-600 flex-shrink-0">Endpoint:</span>
-                      <span className="text-sm text-gray-900 bg-gray-50 px-2 py-1 rounded font-mono break-all">
+                    <div className="flex flex-col sm:flex-row py-2 sm:py-2.5 border-b border-gray-100">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 sm:mb-0 sm:w-36 sm:flex-shrink-0">Endpoint:</span>
+                      <span className="text-xs sm:text-sm text-gray-900 bg-gray-50 px-2 py-1 rounded font-mono break-all">
                         {requests[selectedRequest].endpoint}
                       </span>
                     </div>
-                    <div className="flex py-2.5 border-b border-gray-100">
-                      <span className="w-36 text-sm font-semibold text-gray-600 flex-shrink-0">IP Address:</span>
-                      <span className="text-sm text-gray-900 break-all">{requests[selectedRequest].ip}</span>
+                    <div className="flex flex-col sm:flex-row py-2 sm:py-2.5 border-b border-gray-100">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 sm:mb-0 sm:w-36 sm:flex-shrink-0">IP Address:</span>
+                      <span className="text-xs sm:text-sm text-gray-900 break-all">{requests[selectedRequest].ip}</span>
                     </div>
-                    <div className="flex py-2.5">
-                      <span className="w-36 text-sm font-semibold text-gray-600 flex-shrink-0">Timestamp:</span>
-                      <span className="text-sm text-gray-900 break-all">{requests[selectedRequest].timestamp}</span>
+                    <div className="flex flex-col sm:flex-row py-2 sm:py-2.5">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 sm:mb-0 sm:w-36 sm:flex-shrink-0">Timestamp:</span>
+                      <span className="text-xs sm:text-sm text-gray-900 break-all">{requests[selectedRequest].timestamp}</span>
                     </div>
                   </div>
                 </section>

@@ -259,6 +259,36 @@ export default function Dashboard({ connection, onDisconnect }) {
         </div>
       </header>
 
+      {isCommunityServer && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-600">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm sm:text-base font-semibold text-yellow-800">
+                  Community Server - Testing Only
+                </h3>
+                <div className="mt-2 text-xs sm:text-sm text-yellow-700">
+                  <p className="mb-1">
+                    You are connected to a <strong>shared public instance</strong> for testing purposes only.
+                  </p>
+                  <p className="mb-1">
+                    <strong>Note:</strong> All request data received in buckets is stored in <strong>memory only</strong> and is <strong>not persistent</strong>. Data will be lost on server restart.
+                  </p>
+                  <p>
+                    <strong>Important:</strong> Do not share your bucket IDs with unknown people or use this for sensitive data.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">My Buckets</h2>

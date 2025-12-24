@@ -2,17 +2,18 @@ import { useState } from 'react';
 import { config } from '../config';
 
 export default function ConnectForm({ onConnect }) {
-  const [url, setUrl] = useState('http://localhost:8080');
+  const [url, setUrl] = useState('http://127.0.0.1:7895');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [isConnectingServer, setIsConnectingServer] = useState(false);
+  const [isConnectingCommunity, setIsConnectingCommunity] = useState(false);
   const [error, setError] = useState('');
   const showCommunityServer = config.communityServerUrl && config.communityServerUrl.trim() !== '';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setIsConnecting(true);
+    setIsConnectingServer(true);
 
     try {
       const response = await fetch(`${url}/api/v1/ping`, {
@@ -43,13 +44,13 @@ export default function ConnectForm({ onConnect }) {
     } catch (err) {
       setError('Failed to connect to Data Bucket API. Please check the URL and credentials.');
     } finally {
-      setIsConnecting(false);
+      setIsConnectingServer(false);
     }
   };
 
   const handleCommunityConnect = async () => {
     setError('');
-    setIsConnecting(true);
+    setIsConnectingCommunity(true);
 
     try {
       const response = await fetch(`${config.communityServerUrl}/api/v1/ping`, {
@@ -77,7 +78,7 @@ export default function ConnectForm({ onConnect }) {
     } catch (err) {
       setError('Failed to connect to Community Server. Please try again later.');
     } finally {
-      setIsConnecting(false);
+      setIsConnectingCommunity(false);
     }
   };
 
@@ -112,7 +113,7 @@ export default function ConnectForm({ onConnect }) {
                   type="text"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="http://localhost:8080"
+                  placeholder="http://127.0.0.1:7895"
                   required
                   className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl text-base transition-all outline-none bg-gray-50 focus:border-purple-600 focus:bg-white focus:ring-4 focus:ring-purple-100 placeholder-gray-400"
                 />
@@ -154,10 +155,10 @@ export default function ConnectForm({ onConnect }) {
 
               <button
                 type="submit"
-                disabled={isConnecting}
+                disabled={isConnectingServer}
                 className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-xl font-semibold text-base transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-8"
               >
-                {isConnecting ? (
+                {isConnectingServer ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                     Connecting...
@@ -204,10 +205,10 @@ export default function ConnectForm({ onConnect }) {
 
                 <button
                   onClick={handleCommunityConnect}
-                  disabled={isConnecting}
+                  disabled={isConnectingCommunity}
                   className="w-full py-4 bg-gradient-to-r from-green-600 to-green-800 text-white rounded-xl font-semibold text-base transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {isConnecting ? (
+                  {isConnectingCommunity ? (
                     <>
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                       Connecting...
