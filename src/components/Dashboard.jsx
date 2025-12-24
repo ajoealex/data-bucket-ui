@@ -45,6 +45,82 @@ export default function Dashboard({ connection, onDisconnect }) {
         const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
         setBuckets(localBuckets);
         setIsLoading(false);
+
+        // Then fetch data for each bucket to get updated request counts
+        const updatedBuckets = { ...localBuckets };
+        const bucketsToRemove = [];
+
+        await Promise.all(
+          Object.keys(localBuckets).map(async (bucketId) => {
+            try {
+              const response = await fetch(`${connection.url}/api/v1/bucket_data/${bucketId}?cleanup=false`, {
+                headers: {
+                  'Content-Type': 'application/json',
+                }
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+
+                // Check if response contains an error (bucket not found)
+                if (data.error) {
+                  console.log(`Bucket ${bucketId} not found on server, removing from cache. Error: ${data.error}`);
+                  bucketsToRemove.push(bucketId);
+                } else {
+                  console.log(`Bucket ${bucketId} data:`, data);
+
+                  // API returns an array directly, not an object with requests property
+                  const requests = Array.isArray(data) ? data : (data.requests || []);
+                  const requestCount = requests.length || 0;
+                  const lastRequestAt = requests.length > 0
+                    ? requests[requests.length - 1].timestamp
+                    : null;
+
+                  console.log(`Bucket ${bucketId} - Request count: ${requestCount}, Last request: ${lastRequestAt}`);
+
+                  updatedBuckets[bucketId] = {
+                    ...localBuckets[bucketId],
+                    request_count: requestCount,
+                    last_request_at: lastRequestAt
+                  };
+                }
+              } else if (response.status === 404 || response.status === 500) {
+                // If bucket not found (404) or server error (500), check if it's a "not found" error
+                try {
+                  const errorData = await response.json();
+                  if (errorData.error && errorData.error.includes('not found')) {
+                    console.log(`Bucket ${bucketId} not found (status ${response.status}), removing from cache`);
+                    bucketsToRemove.push(bucketId);
+                  } else {
+                    console.log(`Bucket ${bucketId} returned status ${response.status} with error: ${errorData.error}`);
+                  }
+                } catch (e) {
+                  // If we can't parse the error response, just log it
+                  console.log(`Bucket ${bucketId} returned status ${response.status}`);
+                }
+              } else {
+                // Log other non-OK responses
+                console.log(`Bucket ${bucketId} returned status ${response.status}`);
+              }
+            } catch (error) {
+              console.warn(`Failed to fetch data for bucket ${bucketId}:`, error);
+            }
+          })
+        );
+
+        // Remove buckets that no longer exist on the server
+        if (bucketsToRemove.length > 0) {
+          console.log(`Removing ${bucketsToRemove.length} bucket(s) from cache:`, bucketsToRemove);
+          bucketsToRemove.forEach(bucketId => {
+            delete updatedBuckets[bucketId];
+          });
+
+          // Update localStorage with cleaned bucket list
+          localStorage.setItem('localBuckets', JSON.stringify(updatedBuckets));
+        }
+
+        console.log('Final updated buckets before setState:', updatedBuckets);
+        setBuckets(updatedBuckets);
         return;
       }
 
@@ -398,7 +474,7 @@ export default function Dashboard({ connection, onDisconnect }) {
                   <div>
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Requests:</span>
                     <span className="text-sm text-gray-700">
-                      {bucket.request_count || 0} / {bucket.max_requests || '∞'}
+                      {bucket.request_count || 0}
                     </span>
                   </div>
                   <div>
