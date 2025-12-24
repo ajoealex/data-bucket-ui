@@ -93,7 +93,7 @@ export default function ConnectForm({ onConnect }) {
     setIsConnectingCommunity(true);
 
     try {
-      // First, check if server is reachable with ping
+      // Check if server is reachable with ping (no auth needed for community server)
       const pingResponse = await fetch(`${config.communityServerUrl}/api/v1/ping`, {
         method: 'GET',
       });
@@ -107,27 +107,12 @@ export default function ConnectForm({ onConnect }) {
         throw new Error('Community Server is not responding correctly.');
       }
 
-      // Then authenticate (no credentials needed for community server)
-      const authResponse = await fetch(`${config.communityServerUrl}/api/v1/auth`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const authData = await authResponse.json();
-
-      if (authData.authenticated) {
-        // Authentication successful
-        localStorage.setItem('dataBucketUrl', config.communityServerUrl);
-        localStorage.setItem('dataBucketUsername', '');
-        localStorage.setItem('dataBucketPassword', '');
-        localStorage.setItem('isCommunityServer', 'true');
-        onConnect({ url: config.communityServerUrl, username: '', password: '' });
-      } else {
-        // Authentication failed (shouldn't happen for community server)
-        setError('Failed to authenticate with Community Server. Please try again later.');
-      }
+      // Connection successful - community server doesn't require authentication
+      localStorage.setItem('dataBucketUrl', config.communityServerUrl);
+      localStorage.setItem('dataBucketUsername', '');
+      localStorage.setItem('dataBucketPassword', '');
+      localStorage.setItem('isCommunityServer', 'true');
+      onConnect({ url: config.communityServerUrl, username: '', password: '' });
     } catch (err) {
       if (err.message) {
         setError(err.message);
