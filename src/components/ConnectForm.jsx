@@ -126,8 +126,8 @@ export default function ConnectForm({ onConnect }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-purple-900 p-5">
-      <div className={`bg-white rounded-3xl shadow-2xl p-12 w-full animate-slideUp ${showCommunityServer ? 'max-w-5xl' : 'max-w-md'}`}>
-        <div className="text-center mb-10">
+      <div className={`bg-white rounded-3xl shadow-2xl p-6 md:p-12 w-full animate-slideUp ${showCommunityServer ? 'max-w-5xl' : 'max-w-md'}`}>
+        <div className="text-center mb-6 md:mb-10">
           <div className="inline-block text-purple-600 mb-4 animate-float">
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto">
               <rect x="8" y="16" width="48" height="40" rx="4" stroke="currentColor" strokeWidth="3" fill="none"/>
@@ -140,9 +140,9 @@ export default function ConnectForm({ onConnect }) {
           <p className="text-gray-600">Connect to your Data Bucket API</p>
         </div>
 
-        <div className={`grid ${showCommunityServer ? 'grid-cols-2 gap-8' : 'grid-cols-1'}`}>
+        <div className={`grid ${showCommunityServer ? 'grid-cols-1 md:grid-cols-2 gap-6 md:gap-8' : 'grid-cols-1'}`}>
           {/* Left side - Regular login */}
-          <div className={showCommunityServer ? 'border-r border-gray-200 pr-8' : ''}>
+          <div className={showCommunityServer ? 'md:border-r border-gray-200 md:pr-8 pb-6 md:pb-0 border-b md:border-b-0' : ''}>
             <h2 className="text-xl font-bold text-gray-900 mb-6">Connect to Your Server</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -244,9 +244,9 @@ export default function ConnectForm({ onConnect }) {
 
           {/* Right side - Community Server */}
           {showCommunityServer && (
-            <div className="pl-8">
+            <div className="md:pl-8 pt-6 md:pt-0">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Community Server</h2>
-              <div className="flex flex-col items-center justify-center h-full space-y-6">
+              <div className="flex flex-col items-center justify-center md:h-full space-y-6">
                 <div className="text-center">
                   <svg width="80" height="80" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 text-purple-600">
                     <circle cx="32" cy="20" r="8" stroke="currentColor" strokeWidth="2.5" fill="none"/>
