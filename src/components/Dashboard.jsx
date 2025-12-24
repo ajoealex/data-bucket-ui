@@ -11,7 +11,9 @@ export default function Dashboard({ connection, onDisconnect }) {
   const [selectedBucketId, setSelectedBucketId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
-  const [isUnauthenticated, setIsUnauthenticated] = useState(false);
+  const [isCommunityServer, setIsCommunityServer] = useState(() => {
+    return localStorage.getItem('isCommunityServer') === 'true';
+  });
 
   const apiCall = async (endpoint, options = {}) => {
     const headers = {
@@ -36,6 +38,17 @@ export default function Dashboard({ connection, onDisconnect }) {
   const loadBuckets = async () => {
     try {
       setIsLoading(true);
+
+      // If community server, try to load from cache first, then fetch from server
+      if (isCommunityServer) {
+        // Load from cache immediately for fast display
+        const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
+        setBuckets(localBuckets);
+        setIsLoading(false);
+        return;
+      }
+
+      // Otherwise, fetch from server
       const response = await fetch(`${connection.url}/api/v1/buckets`, {
         headers: {
           'Content-Type': 'application/json',
@@ -45,54 +58,15 @@ export default function Dashboard({ connection, onDisconnect }) {
         }
       });
 
-      // Handle 401 Unauthorized - check if it returns {"error": "Authentication required"}
-      if (response.status === 401) {
-        try {
-          const errorData = await response.json();
-          if (errorData.error === 'Authentication required') {
-            // Server requires authentication but we don't have it - use local storage
-            console.log('Server requires authentication - using local storage mode');
-            setIsUnauthenticated(true);
-            const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
-            setBuckets(localBuckets);
-            setIsLoading(false);
-            return;
-          }
-        } catch (e) {
-          // If JSON parsing fails, still treat as unauthenticated
-          console.log('401 error - using local storage mode');
-          setIsUnauthenticated(true);
-          const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
-          setBuckets(localBuckets);
-          setIsLoading(false);
-          return;
-        }
-      }
-
       if (!response.ok) {
         throw new Error(`Failed to load buckets: ${response.statusText}`);
       }
 
       const data = await response.json();
-
-      // Check if response indicates authentication required (200 OK but with error field)
-      if (data.error === 'Authentication required') {
-        console.log('Server requires authentication - using local storage mode');
-        setIsUnauthenticated(true);
-        const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
-        setBuckets(localBuckets);
-      } else {
-        // Authenticated mode - use server data
-        setIsUnauthenticated(false);
-        setBuckets(data.buckets || {});
-      }
+      setBuckets(data.buckets || {});
     } catch (error) {
       console.error('Failed to load buckets:', error);
-      // Fallback to local storage on error
-      console.log('Error loading buckets - using local storage mode');
-      setIsUnauthenticated(true);
-      const localBuckets = JSON.parse(localStorage.getItem('localBuckets') || '{}');
-      setBuckets(localBuckets);
+      setBuckets({});
     } finally {
       setIsLoading(false);
     }
@@ -117,19 +91,20 @@ export default function Dashboard({ connection, onDisconnect }) {
         return;
       }
 
-      if (isUnauthenticated) {
-        // Local storage mode - still call the API to get the bucket ID from server
-        const result = await apiCall('/api/v1/create_bucket', {
-          method: 'POST',
-          body: JSON.stringify({
-            name,
-            mock_response: mockResponse || {},
-            mock_headers: mockHeaders || {},
-            mock_status_code: mockStatusCode || 200,
-            mock_response_type: mockResponseType || 'json'
-          })
-        });
+      // Call server to create bucket
+      const result = await apiCall('/api/v1/create_bucket', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          mock_response: mockResponse || {},
+          mock_headers: mockHeaders || {},
+          mock_status_code: mockStatusCode || 200,
+          mock_response_type: mockResponseType || 'json'
+        })
+      });
 
+      if (isCommunityServer) {
+        // Community server mode - update cache after successful creation
         const bucketId = result.bucket_id;
         const newBucket = {
           name,
@@ -150,23 +125,10 @@ export default function Dashboard({ connection, onDisconnect }) {
 
         localStorage.setItem('localBuckets', JSON.stringify(updatedBuckets));
         setBuckets(updatedBuckets);
-        setShowCreateModal(false);
-        return;
+      } else {
+        // Private server mode - reload from server
+        await loadBuckets();
       }
-
-      await apiCall('/api/v1/create_bucket', {
-        method: 'POST',
-        body: JSON.stringify({
-          name,
-          mock_response: mockResponse || {},
-          mock_headers: mockHeaders || {},
-          mock_status_code: mockStatusCode || 200,
-          mock_response_type: mockResponseType || 'json'
-        })
-      });
-
-      // Reload buckets from server to get the complete bucket data
-      await loadBuckets();
 
       setShowCreateModal(false);
     } catch (error) {
@@ -176,8 +138,14 @@ export default function Dashboard({ connection, onDisconnect }) {
 
   const updateBucket = async (bucketId, updates) => {
     try {
-      if (isUnauthenticated) {
-        // Local storage mode
+      // Call server to update bucket
+      await apiCall(`/api/v1/bucket/${bucketId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      });
+
+      if (isCommunityServer) {
+        // Community server mode - update cache after successful update
         const updatedBuckets = {
           ...buckets,
           [bucketId]: {
@@ -188,23 +156,16 @@ export default function Dashboard({ connection, onDisconnect }) {
 
         localStorage.setItem('localBuckets', JSON.stringify(updatedBuckets));
         setBuckets(updatedBuckets);
-        setShowEditModal(false);
-        setEditingBucket(null);
-        return;
+      } else {
+        // Private server mode - update local state
+        setBuckets(prev => ({
+          ...prev,
+          [bucketId]: {
+            ...prev[bucketId],
+            ...updates
+          }
+        }));
       }
-
-      await apiCall(`/api/v1/bucket/${bucketId}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates)
-      });
-
-      setBuckets(prev => ({
-        ...prev,
-        [bucketId]: {
-          ...prev[bucketId],
-          ...updates
-        }
-      }));
 
       setShowEditModal(false);
       setEditingBucket(null);
@@ -217,21 +178,23 @@ export default function Dashboard({ connection, onDisconnect }) {
     if (!confirm('Are you sure you want to delete this bucket?')) return;
 
     try {
-      if (isUnauthenticated) {
-        // Local storage mode
+      // Call server to delete bucket
+      await apiCall(`/api/v1/bucket/${bucketId}/clean`, { method: 'DELETE' });
+
+      if (isCommunityServer) {
+        // Community server mode - update cache after successful deletion
         const updatedBuckets = { ...buckets };
         delete updatedBuckets[bucketId];
         localStorage.setItem('localBuckets', JSON.stringify(updatedBuckets));
         setBuckets(updatedBuckets);
-        return;
+      } else {
+        // Private server mode - update local state
+        setBuckets(prev => {
+          const newBuckets = { ...prev };
+          delete newBuckets[bucketId];
+          return newBuckets;
+        });
       }
-
-      await apiCall(`/api/v1/bucket/${bucketId}/clean`, { method: 'DELETE' });
-      setBuckets(prev => {
-        const newBuckets = { ...prev };
-        delete newBuckets[bucketId];
-        return newBuckets;
-      });
     } catch (error) {
       alert('Failed to delete bucket: ' + error.message);
     }

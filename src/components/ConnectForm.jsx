@@ -35,6 +35,7 @@ export default function ConnectForm({ onConnect }) {
         localStorage.setItem('dataBucketUrl', url);
         localStorage.setItem('dataBucketUsername', username);
         localStorage.setItem('dataBucketPassword', password);
+        localStorage.setItem('isCommunityServer', 'false');
         onConnect({ url, username, password });
       } else {
         throw new Error('Invalid response from server');
@@ -68,6 +69,7 @@ export default function ConnectForm({ onConnect }) {
         localStorage.setItem('dataBucketUrl', config.communityServerUrl);
         localStorage.setItem('dataBucketUsername', '');
         localStorage.setItem('dataBucketPassword', '');
+        localStorage.setItem('isCommunityServer', 'true');
         onConnect({ url: config.communityServerUrl, username: '', password: '' });
       } else {
         throw new Error('Invalid response from server');
