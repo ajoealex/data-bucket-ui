@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Bucket - API Request Capture Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --success: #10b981;
+            --info: #3b82f6;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1a202c;
+            --light: #f7fafc;
+            --gray: #64748b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4rem 1rem;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .hero .tagline {
+            font-size: 1.25rem;
+            opacity: 0.95;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.875rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn-outline {
+            border: 2px solid white;
+            color: white;
+        }
+
+        .btn-outline:hover {
+            background: white;
+            color: var(--primary);
+        }
+
+        /* Navigation */
+        .nav {
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Section Cards */
+        .section {
+            background: white;
+            margin: 2rem 0;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .section:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .section h2 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid var(--primary);
+            display: inline-block;
+        }
+
+        .section h3 {
+            color: var(--dark);
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem;
+        }
+
+        .section h4 {
+            color: var(--gray);
+            font-size: 1.2rem;
+            margin: 1.5rem 0 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Code Blocks */
+        code {
+            background: #f1f5f9;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        .code-wrapper {
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        pre {
+            background: var(--dark);
+            color: #e2e8f0;
+            padding: 1.5rem;
+            padding-top: 2.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 0;
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: #e2e8f0;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        /* Copy button */
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+        }
+
+        .copy-btn.copied::after {
+            content: ' ✓';
+        }
+
+        /* Command Cards */
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .command-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s;
+        }
+
+        .command-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+        }
+
+        .command-card h4 {
+            margin: 0 0 0.75rem 0;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        .command-card .code-wrapper {
+            margin: 0;
+        }
+
+        .command-card pre {
+            padding: 1rem;
+            padding-top: 2.5rem;
+            font-size: 0.85rem;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* API Endpoints */
+        .endpoint {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .endpoint:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+        }
+
+        .endpoint h4 {
+            margin-top: 0;
+            color: var(--dark);
+        }
+
+        .method {
+            display: inline-block;
+            padding: 0.375rem 0.875rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-right: 0.5rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .method.get { background: var(--success); color: white; }
+        .method.post { background: var(--info); color: white; }
+        .method.put { background: var(--warning); color: white; }
+        .method.delete { background: var(--danger); color: white; }
+        .method.any { background: var(--secondary); color: white; }
+
+        /* Steps */
+        .steps {
+            counter-reset: step;
+        }
+
+        .step {
+            position: relative;
+            padding-left: 3rem;
+            margin: 2rem 0;
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2rem;
+            height: 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Info Boxes */
+        .info-box {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%);
+            border-left: 4px solid var(--info);
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+            border-left: 4px solid var(--warning);
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        /* Footer */
+        footer {
+            background: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        footer p {
+            color: var(--gray);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin: 0.5rem 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .hero .tagline { font-size: 1rem; }
+            .nav-container { flex-direction: column; gap: 1rem; }
+            .nav-links { flex-wrap: wrap; justify-content: center; }
+            .section { padding: 1.5rem; }
+            .command-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1>🪣 Data Bucket</h1>
+        <p class="tagline">Lightweight API service for capturing and storing HTTP requests</p>
+        <div class="hero-buttons">
+            <a href="#deployment" class="btn btn-primary">Get Started</a>
+            <a href="https://ajoealex.github.io/data-bucket-ui/" class="btn btn-outline" target="_blank">Data Bucket Login →</a>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#deployment">Deployment</a></li>
+                <li><a href="#configuration">Configuration</a></li>
+                <li><a href="#api">API Reference</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Overview Section -->
+        <section id="overview" class="section">
+            <h2>Overview</h2>
+            <p>Data Bucket is a powerful yet lightweight API service designed for testing webhooks, debugging API integrations, and rapid prototyping. Capture any HTTP request, configure mock responses, and inspect payloads with ease.</p>
+        </section>
+
+        <!-- Deployment Section -->
+        <section id="deployment" class="section">
+            <h2>🚀 Docker Deployment</h2>
+
+            <h3>Quick Start with Docker Compose</h3>
+            <p>Deploy Data Bucket in minutes using Docker Compose with our pre-built image from Docker Hub.</p>
+
+            <div class="info-box">
+                <strong>📋 Prerequisites:</strong>
+                <ul>
+                    <li>Docker installed on your system</li>
+                    <li>Docker Compose (included with Docker Desktop)</li>
+                </ul>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <h4>Create docker-compose.yml</h4>
+                    <p>Create a <code>docker-compose.yml</code> file with the following content:</p>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>services:
+  data-bucket:
+    image: ajoealex/data-bucket:latest
+    container_name: data-bucket
+    restart: unless-stopped
+    environment:
+      - port=7894
+      - user_name=admin
+      - password=your_secure_password
+      - auth_ignored_method_pids=3
+      - requests_per_bucket=50
+      - enable_request_logging=false
+    volumes:
+      - bucket-data:/app/app_data
+    networks:
+      - data-bucket-network
+    expose:
+      - "7894"
+
+  nginx:
+    image: nginx:alpine
+    container_name: data-bucket-nginx
+    restart: unless-stopped
+    ports:
+      - "7895:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - data-bucket
+    networks:
+      - data-bucket-network
+
+volumes:
+  bucket-data:
+    driver: local
+  nginx-logs:
+    driver: local
+
+networks:
+  data-bucket-network:
+    driver: bridge</code></pre>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h4>Create nginx.conf</h4>
+                    <p>Create an <code>nginx.conf</code> file in the same directory:</p>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>events {
+    worker_connections 1024;
+}
+
+http {
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
+    log_format detailed '$remote_addr - $remote_user [$time_local] '
+                       '"$request" $status $body_bytes_sent '
+                       '"$http_referer" "$http_user_agent" '
+                       'rt=$request_time';
+
+    upstream data_bucket_app {
+        server data-bucket:7894;
+    }
+
+    server {
+        listen 80;
+        server_name localhost;
+
+        access_log /var/log/nginx/access.log detailed;
+        client_max_body_size 100M;
+
+        location / {
+            proxy_pass http://data_bucket_app;
+            proxy_http_version 1.1;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
+        }
+
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+        }
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h4>Start the Services</h4>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>docker-compose up -d</code></pre>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h4>Verify Deployment</h4>
+                    <p>Test that the service is running:</p>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>curl http://localhost:7895/api/v1/ping</code></pre>
+                    </div>
+                    <p>Expected response: <code>{"status":"ok"}</code></p>
+                </div>
+            </div>
+
+            <h3>🐳 Essential Docker Commands</h3>
+            <div class="command-grid">
+                <div class="command-card">
+                    <h4>Start services</h4>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>docker-compose up -d</code></pre>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <h4>Stop services</h4>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>docker-compose down</code></pre>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <h4>View logs (follow mode)</h4>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>docker-compose logs -f data-bucket</code></pre>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <h4>Restart services</h4>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>docker-compose restart</code></pre>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <h4>Pull latest image</h4>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>docker-compose pull</code></pre>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <h4>Update and restart</h4>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>docker-compose pull && docker-compose up -d</code></pre>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <h4>Remove everything (including volumes)</h4>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>docker-compose down -v</code></pre>
+                    </div>
+                </div>
+
+                <div class="command-card">
+                    <h4>View running containers</h4>
+                    <div class="code-wrapper">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code>docker-compose ps</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configuration Section -->
+        <section id="configuration" class="section">
+            <h2>⚙️ Configuration</h2>
+
+            <h3>Environment Variables</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Description</th>
+                            <th>Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>port</code></td>
+                            <td>Internal port for the data-bucket service</td>
+                            <td>7894</td>
+                        </tr>
+                        <tr>
+                            <td><code>user_name</code></td>
+                            <td>Basic auth username (leave empty to disable auth)</td>
+                            <td>admin</td>
+                        </tr>
+                        <tr>
+                            <td><code>password</code></td>
+                            <td>Basic auth password (leave empty to disable auth)</td>
+                            <td>pwd</td>
+                        </tr>
+                        <tr>
+                            <td><code>auth_ignored_method_pids</code></td>
+                            <td>Comma-separated PIDs to skip authentication<br><small>PID 3 = data capture endpoint</small></td>
+                            <td>1,2,3,4,5,6</td>
+                        </tr>
+                        <tr>
+                            <td><code>requests_per_bucket</code></td>
+                            <td>Maximum requests stored per bucket</td>
+                            <td>50</td>
+                        </tr>
+                        <tr>
+                            <td><code>enable_request_logging</code></td>
+                            <td>Enable/disable request logging to console</td>
+                            <td>false</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Using .env File</h3>
+            <p>For easier configuration management, create a <code>.env</code> file:</p>
+            <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>PORT=7894
+USER_NAME=admin
+PASSWORD=your_secure_password
+AUTH_IGNORED_PIDS=3
+REQUESTS_PER_BUCKET=50
+ENABLE_REQUEST_LOGGING=false</code></pre>
+            </div>
+
+            <p>Update your docker-compose.yml to reference the .env file:</p>
+            <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>environment:
+  - port=${PORT:-7894}
+  - user_name=${USER_NAME:-admin}
+  - password=${PASSWORD:-pwd}
+  - auth_ignored_method_pids=${AUTH_IGNORED_PIDS:-3}
+  - requests_per_bucket=${REQUESTS_PER_BUCKET:-50}
+  - enable_request_logging=${ENABLE_REQUEST_LOGGING:-false}</code></pre>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Security Note:</strong> Always use strong passwords in production and never commit your <code>.env</code> file to version control.
+            </div>
+
+            <h3>API Endpoint PIDs</h3>
+            <p>Each API endpoint is assigned a PID (Process ID) for authentication control. Use these PIDs in <code>auth_ignored_method_pids</code> to bypass authentication for specific endpoints.</p>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Method</th>
+                            <th>Endpoint</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>0</code></td>
+                            <td><span class="method get">GET</span></td>
+                            <td><code>/ping</code></td>
+                            <td>Health check - Always public (no auth required)</td>
+                        </tr>
+                        <tr>
+                            <td><code>-</code></td>
+                            <td><span class="method post">POST</span></td>
+                            <td><code>/auth</code></td>
+                            <td>Authentication test - Always public (no auth required)</td>
+                        </tr>
+                        <tr>
+                            <td><code>1</code></td>
+                            <td><span class="method post">POST</span></td>
+                            <td><code>/create_bucket</code></td>
+                            <td>Create a new bucket</td>
+                        </tr>
+                        <tr>
+                            <td><code>2</code></td>
+                            <td><span class="method put">PUT</span></td>
+                            <td><code>/bucket/:bucket_id</code></td>
+                            <td>Update bucket configuration</td>
+                        </tr>
+                        <tr>
+                            <td><code>3</code></td>
+                            <td><span class="method any">ANY</span></td>
+                            <td><code>/bucket_data/:bucket_id/data/*</code></td>
+                            <td>Send data to bucket (supports wildcard paths)</td>
+                        </tr>
+                        <tr>
+                            <td><code>4</code></td>
+                            <td><span class="method get">GET</span></td>
+                            <td><code>/bucket_data/:bucket_id</code></td>
+                            <td>Retrieve bucket data</td>
+                        </tr>
+                        <tr>
+                            <td><code>5</code></td>
+                            <td><span class="method delete">DELETE</span></td>
+                            <td><code>/bucket_data/:bucket_id</code></td>
+                            <td>Delete bucket data only</td>
+                        </tr>
+                        <tr>
+                            <td><code>6</code></td>
+                            <td><span class="method delete">DELETE</span></td>
+                            <td><code>/bucket/:bucket_id/clean</code></td>
+                            <td>Delete entire bucket</td>
+                        </tr>
+                        <tr>
+                            <td><code>7</code></td>
+                            <td><span class="method delete">DELETE</span></td>
+                            <td><code>/bucket/remove_all</code></td>
+                            <td>Delete all buckets</td>
+                        </tr>
+                        <tr>
+                            <td><code>8</code></td>
+                            <td><span class="method get">GET</span></td>
+                            <td><code>/buckets</code></td>
+                            <td>List all buckets</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Example Use Cases:</strong>
+                <ul>
+                    <li><strong>Public webhook receiver:</strong> Set <code>auth_ignored_method_pids=3</code> to allow anyone to send data to buckets while protecting management endpoints</li>
+                    <li><strong>Open testing environment:</strong> Set <code>auth_ignored_method_pids=1,2,3,4,5,6</code> to disable auth for most operations</li>
+                    <li><strong>Fully secured:</strong> Set <code>auth_ignored_method_pids=</code> (empty) to require authentication on all endpoints</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- API Reference Section -->
+        <section id="api" class="section">
+            <h2>📚 API Reference</h2>
+
+            <h3>Base URL</h3>
+            <p><code>http://localhost:7895/api/v1</code></p>
+
+            <h3>Authentication</h3>
+            <p>Most endpoints require Basic Authentication. Include the Authorization header:</p>
+            <div class="code-wrapper">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>Authorization: Basic base64(username:password)</code></pre>
+            </div>
+
+            <h3>Endpoints</h3>
+
+            <div class="endpoint">
+                <h4>🏥 Health Check</h4>
+                <p><span class="method get">GET</span> <code>/ping</code></p>
+                <p>Check if the service is running. No authentication required.</p>
+                <p><strong>Response:</strong></p>
+                <div class="code-wrapper">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    <pre><code>{"status": "ok"}</code></pre>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <h4>🆕 Create Bucket</h4>
+                <p><span class="method post">POST</span> <code>/create_bucket</code></p>
+                <p>Create a new bucket for capturing requests with customizable mock responses.</p>
+                <p><strong>Request Body:</strong></p>
+                <div class="code-wrapper">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    <pre><code>{
+  "name": "my-webhook",
+  "mock_response": {"success": true, "message": "Data received"},
+  "mock_headers": {"X-Custom-Header": "value"},
+  "mock_status_code": 200,
+  "mock_response_type": "json"
+}</code></pre>
+                </div>
+                <p><strong>Response:</strong></p>
+                <div class="code-wrapper">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    <pre><code>{
+  "bucket_id": "5260566a-b74d-4e14-812c-2b495c7d3385"
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <h4>📨 Send Data to Bucket</h4>
+                <p><span class="method any">ANY</span> <code>/bucket_data/:bucket_id/data/*</code></p>
+                <p>Capture any HTTP request to this endpoint. Supports wildcard paths for flexible routing.</p>
+                <p><strong>Examples:</strong></p>
+                <ul>
+                    <li><code>/bucket_data/abc123/data</code></li>
+                    <li><code>/bucket_data/abc123/data/users</code></li>
+                    <li><code>/bucket_data/abc123/data/users/123/profile</code></li>
+                    <li><code>/bucket_data/abc123/data/webhooks/stripe/payment</code></li>
+                </ul>
+                <p><strong>Supported Content Types:</strong></p>
+                <ul>
+                    <li>application/json</li>
+                    <li>application/x-www-form-urlencoded</li>
+                    <li>multipart/form-data</li>
+                    <li>text/plain</li>
+                    <li>text/xml / application/xml</li>
+                    <li>Binary files (images, PDFs, etc.)</li>
+                </ul>
+                <p><strong>Response:</strong> Returns the configured mock response for the bucket</p>
+            </div>
+
+            <div class="endpoint">
+                <h4>📥 Get Bucket Data</h4>
+                <p><span class="method get">GET</span> <code>/bucket_data/:bucket_id?cleanup=true&latest=false</code></p>
+                <p>Retrieve all captured requests from a bucket.</p>
+                <p><strong>Query Parameters:</strong></p>
+                <ul>
+                    <li><code>cleanup</code> (boolean): Clear data after retrieval (default: true)</li>
+                    <li><code>latest</code> (boolean): Get only the most recent request (default: false)</li>
+                </ul>
+                <p><strong>Response:</strong></p>
+                <div class="code-wrapper">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    <pre><code>{
+  "data": [
+    {
+      "endpoint": "/api/v1/bucket_data/abc123/data/users",
+      "method": "POST",
+      "headers": {...},
+      "payload": {...},
+      "payload_type": "json",
+      "query": {},
+      "timestamp": "2025-12-29T10:30:00.000Z",
+      "ip": "127.0.0.1"
+    }
+  ]
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <h4>📋 List All Buckets</h4>
+                <p><span class="method get">GET</span> <code>/buckets</code></p>
+                <p>Get information about all buckets including request counts and configuration.</p>
+                <p><strong>Response:</strong></p>
+                <div class="code-wrapper">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    <pre><code>{
+  "buckets": {
+    "abc123": {
+      "name": "my-webhook",
+      "mock_response": {...},
+      "mock_headers": {...},
+      "mock_status_code": 200,
+      "mock_response_type": "json",
+      "created_at": "2025-12-29T10:00:00.000Z",
+      "request_count": 5,
+      "max_requests": 50,
+      "last_request_at": "2025-12-29T10:30:00.000Z"
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <h4>✏️ Update Bucket Configuration</h4>
+                <p><span class="method put">PUT</span> <code>/bucket/:bucket_id</code></p>
+                <p>Update bucket mock response, headers, status code, or response type.</p>
+                <p><strong>Request Body:</strong></p>
+                <div class="code-wrapper">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    <pre><code>{
+  "mock_response": {"updated": true},
+  "mock_status_code": 201,
+  "mock_headers": {"X-New-Header": "value"}
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <h4>🧹 Delete Bucket Data</h4>
+                <p><span class="method delete">DELETE</span> <code>/bucket_data/:bucket_id</code></p>
+                <p>Clear all captured requests from a bucket without deleting the bucket itself.</p>
+            </div>
+
+            <div class="endpoint">
+                <h4>🗑️ Delete Bucket</h4>
+                <p><span class="method delete">DELETE</span> <code>/bucket/:bucket_id/clean</code></p>
+                <p>Completely remove a bucket and all its data.</p>
+            </div>
+
+            <div class="endpoint">
+                <h4>💣 Delete All Buckets</h4>
+                <p><span class="method delete">DELETE</span> <code>/bucket/remove_all</code></p>
+                <p>Remove all buckets and their data. Use with caution!</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function copyCode(button) {
+            // Get the code content
+            const codeBlock = button.nextElementSibling.querySelector('code');
+            const code = codeBlock.textContent;
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(code).then(() => {
+                // Visual feedback
+                const originalText = button.textContent;
+                button.classList.add('copied');
+                button.textContent = 'Copied';
+
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                button.textContent = 'Failed';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
