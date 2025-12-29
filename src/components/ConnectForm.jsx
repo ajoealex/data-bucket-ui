@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { config } from '../config';
 
 export default function ConnectForm({ onConnect }) {
-  const [url, setUrl] = useState('http://127.0.0.1:7895');
+  const [url, setUrl] = useState('http://127.0.0.1:7894');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isConnectingServer, setIsConnectingServer] = useState(false);
